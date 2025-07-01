@@ -156,56 +156,63 @@ export class UserSeeder implements OnModuleInit {
       });
 
       await this.prisma.$transaction(async (tx) => {
-        const country = await tx.country.create({
-          data: {
+        const country = await tx.country.upsert({
+          where: { name: 'Nigeria' },
+          update: {},
+          create: {
             name: 'Nigeria',
             code: 'NI',
             states: {
-              create: [
-                { name: 'Abia' },
-                { name: 'Adamawa' },
-                { name: 'Akwa Ibom' },
-                { name: 'Anambra' },
-                { name: 'Bauchi' },
-                { name: 'Bayelsa' },
-                { name: 'Benue' },
-                { name: 'Borno' },
-                { name: 'Cross River' },
-                { name: 'Delta' },
-                { name: 'Ebonyi' },
-                { name: 'Enugu' },
-                { name: 'Edo' },
-                { name: 'Ekiti' },
-                { name: 'Gombe' },
-                { name: 'Imo' },
-                { name: 'Jigawa' },
-                { name: 'Kaduna' },
-                { name: 'Kano' },
-                { name: 'Katsina' },
-                { name: 'Kebbi' },
-                { name: 'Kogi' },
-                { name: 'Kwara' },
-                { name: 'Lagos' },
-                { name: 'Nasarawa' },
-                { name: 'Niger' },
-                { name: 'Ogun' },
-                { name: 'Ondo' },
-                { name: 'Osun' },
-                { name: 'Oyo' },
-                { name: 'Plateau' },
-                { name: 'Rivers' },
-                { name: 'Sokoto' },
-                { name: 'Taraba' },
-                { name: 'Yobe' },
-                { name: 'Zamfara' },
-              ],
+              createMany: {
+                data: [
+                  { name: 'Abia' },
+                  { name: 'Adamawa' },
+                  { name: 'Akwa Ibom' },
+                  { name: 'Anambra' },
+                  { name: 'Bauchi' },
+                  { name: 'Bayelsa' },
+                  { name: 'Benue' },
+                  { name: 'Borno' },
+                  { name: 'Cross River' },
+                  { name: 'Delta' },
+                  { name: 'Ebonyi' },
+                  { name: 'Enugu' },
+                  { name: 'Edo' },
+                  { name: 'Ekiti' },
+                  { name: 'Gombe' },
+                  { name: 'Imo' },
+                  { name: 'Jigawa' },
+                  { name: 'Kaduna' },
+                  { name: 'Kano' },
+                  { name: 'Katsina' },
+                  { name: 'Kebbi' },
+                  { name: 'Kogi' },
+                  { name: 'Kwara' },
+                  { name: 'Lagos' },
+                  { name: 'Nasarawa' },
+                  { name: 'Niger' },
+                  { name: 'Ogun' },
+                  { name: 'Ondo' },
+                  { name: 'Osun' },
+                  { name: 'Oyo' },
+                  { name: 'Plateau' },
+                  { name: 'Rivers' },
+                  { name: 'Sokoto' },
+                  { name: 'Taraba' },
+                  { name: 'Yobe' },
+                  { name: 'Zamfara' },
+                ],
+                skipDuplicates: true, // 💡 Avoids P2002 on state.name
+              },
             },
           },
           include: { states: true },
         });
 
         const state = country.states.find((s) => s.name === 'Enugu');
-
+        if (!state) {
+          throw new Error('State "Enugu" not found in Nigeria');
+        }
         await tx.user.create({
           data: {
             email: this.config.getOrThrow('ADMIN_EMAIL') as string,
@@ -218,7 +225,7 @@ export class UserSeeder implements OnModuleInit {
             street: '',
             city: '',
             countryId: country.id,
-            stateId: state!.id,
+            stateId: state?.id,
             isVerified: true,
             password: hashedPassword,
             userType: UserRole.SUPER_ADMIN,
@@ -226,7 +233,6 @@ export class UserSeeder implements OnModuleInit {
         });
       });
 
-      Logger.log('Nigeria already exists.');
       Logger.log('Super Admin created successfully.');
     } else {
       Logger.log('Super Admin already exists.');
